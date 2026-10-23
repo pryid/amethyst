@@ -34,7 +34,7 @@ xcodebuild \
 app="$build_dir/Payload/Amethyst.app"
 mkdir -p "$build_dir/Payload"
 ditto "$build_dir/products/Amethyst.app" "$app"
-xcrun lipo -verify_arch arm64 "$app/Amethyst"
+xcrun lipo "$app/Amethyst" -verify_arch arm64
 python3 - "$app/Info.plist" <<'PY'
 import plistlib
 import sys

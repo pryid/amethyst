@@ -3,6 +3,7 @@
 #import <CoreText/CoreText.h>
 #import "../AppDelegate.h"
 #import "MainController.h"
+#include "../AmethystFileLog.h"
 #import "../jailbreak/jailbreak.h"
 #import <mach-o/dyld.h>
 
@@ -16,6 +17,31 @@ extern int csops(pid_t pid, unsigned int  ops, void *useraddr, size_t usersize);
 int run_binary(char *path, char **args, char **env, bool wait, bool root);
 
 @implementation MainController
+
+- (void)amethystShareFileLogs:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state != UIGestureRecognizerStateBegan || self.presentedViewController != nil) return;
+    NSString *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *folder = [documents stringByAppendingPathComponent:@"AmethystLogs"];
+    NSArray<NSString *> *names = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:folder error:nil] sortedArrayUsingSelector:@selector(compare:)];
+    NSMutableArray<NSURL *> *items = [NSMutableArray array];
+    for (NSString *name in [names reverseObjectEnumerator]) {
+        if (![name hasSuffix:@".log"]) continue;
+        NSString *path = [folder stringByAppendingPathComponent:name];
+        NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
+        if (![attributes[NSFileType] isEqualToString:NSFileTypeRegular]) continue;
+        [items addObject:[NSURL fileURLWithPath:path]];
+        if (items.count == 8) break;
+    }
+    if (items.count == 0) {
+        [self sendPopupAlert:@"Diagnostic logs" message:@"No saved log files were found." button:@"Okay"];
+        return;
+    }
+    UIActivityViewController *share = [[UIActivityViewController alloc] initWithActivityItems:items applicationActivities:nil];
+    share.popoverPresentationController.sourceView = self.mainTitle;
+    share.popoverPresentationController.sourceRect = self.mainTitle.bounds;
+    [self presentViewController:share animated:YES completion:nil];
+}
+
 - (bool)prefersStatusBarHidden {
     return self.hideStatusBar;
 }
@@ -191,6 +217,9 @@ jailbroken:
     
     [self.mainTitle addShadowWithRadius:10.0f opacity:0.3f offset:CGSizeMake(0.0f, 0.2f)];
     [self.mainSubtitle addShadowWithRadius:4.0f opacity:0.2f offset:CGSizeMake(0.0f, 0.2f)];
+    self.mainTitle.userInteractionEnabled = YES;
+    self.mainTitle.accessibilityHint = @"Long press to share recent diagnostic logs";
+    [self.mainTitle addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(amethystShareFileLogs:)]];
     self.mainTitle.alpha = 0.9f;
     self.mainSubtitle.alpha = 0.8f;
 
@@ -457,6 +486,11 @@ jailbroken:
 }
 
 - (void)jailbreakButtonAction {
+    if (!gAmethystFileLogReady) {
+        [self sendPopupAlert:@"Logging unavailable" message:[NSString stringWithFormat:@"Diagnostic logging failed (%d). No jailbreak attempt was started.", gAmethystFileLogError] button:@"Okay"];
+        return;
+    }
+    fprintf(stderr, "[filelogger] Jailbreak button selected\n");
     [self.progressRing showRing];
     self.jailbreakCardButton.optionButton.enabled = false;
     self.creditsCardButton.optionButton.enabled = false;
@@ -486,9 +520,11 @@ jailbroken:
     } else {
         flags |= JB_FLAG_EXPLOIT_TRIGON;
     }
+    fprintf(stderr, "[filelogger] request flags=0x%x method=%s restore_rootfs=%d tweaks=%d\n", flags, amethyst.exploit == Exploit_Hemlock ? "Hemlock" : "Trigon", amethyst.restoreRootfs, amethyst.enableTweaks);
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         jb_error_t err = run_jailbreak(flags, (char *)[amethyst.generator UTF8String]);
+        fprintf(stderr, "[result] run_jailbreak returned %d\n", (int)err);
         dispatch_async(dispatch_get_main_queue(), ^{
             self.jailbreakCardButton.optionButton.enabled = true;
             self.creditsCardButton.optionButton.enabled = true;
@@ -740,6 +776,7 @@ void ProgressLog(float progress, const char *fmt, ...) {
     va_start(args, fmt);
     vsprintf(buf, fmt, args);
     va_end(args);
+    if (gAmethystFileLogReady) fprintf(stderr, "[progress %.3f] %s\n", progress, buf);
     
     NSDictionary* data = @{
         @"progress": @[[NSNumber numberWithFloat:progress]],

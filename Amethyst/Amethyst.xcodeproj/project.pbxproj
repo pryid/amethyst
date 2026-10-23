@@ -42,6 +42,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A90F11012FE0000000000001 /* AmethystFileLog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AmethystFileLog.h; sourceTree = "<group>"; };
 		2F0F3B722FD5CA02003D8249 /* aop.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aop.h; sourceTree = "<group>"; };
 		2F0F3B732FD5CA02003D8249 /* aop.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = aop.c; sourceTree = "<group>"; };
 		2F1491292FF96366006A270C /* tnsv2_updater_stub.deb */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = tnsv2_updater_stub.deb; path = ../../basebins/tnsv2_updater_stub.deb; sourceTree = "<group>"; };
@@ -144,6 +145,7 @@
 				2F1C1F652F90448100839511 /* LaunchScreen.storyboard */,
 				2F1C1F682F90448100839511 /* Info.plist */,
 				2F1C1F692F90448100839511 /* main.m */,
+				A90F11012FE0000000000001 /* AmethystFileLog.h */,
 			);
 			path = Amethyst;
 			sourceTree = "<group>";

@@ -31,6 +31,28 @@ The C logger can be tested on Linux or macOS without executing the jailbreak:
 python3 -m unittest discover -s tests -v
 ```
 
+## Build the diagnostic IPA
+
+Push to `main`, or open **Actions → Build diagnostic IPA → Run workflow**.
+The workflow tests the logger on macOS, builds this checkout with Xcode, and
+uploads **Amethyst-diagnostic-build**. It contains
+`Amethyst-logging-unsigned.ipa`, `SHA256SUMS`, compiler output and the build's
+commit/Xcode/SDK versions. Compiler output is uploaded even when building fails.
+GitHub may require enabling Actions in a new fork first.
+
+The IPA still needs signing before installation. From Linux, a sideloader such
+as [Impactor](https://github.com/claration/impactor) can sign and install it using
+your own Apple Account. No signing credentials are used in this workflow.
+
+On a Mac with Xcode, the same build is available with `bash Amethyst/buildipa.sh`;
+results are written to `Amethyst/build`. The installed diagnostic app is named
+**Amethyst Logs**.
+
+A clean clone does not contain the generated `basebins/basebins.tar`. The build
+recreates it from the six precompiled helpers in the checked-in
+`tnsv2_updater.deb`, preserving their bytes and the install layout expected by
+the app. This does not run the package's post-install script or any helper.
+
 # Credits:
 - [staturnz](https://github.com/staturnzz) - Main Developer
 - [Alfie CG](https://github.com/alfiecg24) - Trigon
